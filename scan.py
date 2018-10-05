@@ -39,10 +39,16 @@ def UDP_scan(ip_range, ports):
     # address that the scan is run on in a list and returns it
     active_ports = []
     source_port = RandShort()
-    packet = IP(dst=ip_range)/UDP(sport=source_port, dport=ports)
-    ans, unans = sr(packet, timeout=2, verbose=0)
-    for answer in ans:
-        active_ports.append(int(answer[1].sport))
+    for port in ports:
+        packet = IP(dst=ip_range)/UDP(sport=source_port, dport=port)
+        ans = sr(packet, timeout=2, verbose=0)
+        if ans is None:
+            active_ports.append('{} Open|Filtered'.format(port))
+        elif(ans):
+            answer = str(ans[0]).split()
+            udp = answer[2].split(':')[1]
+            if udp:
+                active_ports.append('{} Filtered'.format(port))
     return active_ports
     
 def ping(ip_range):
