@@ -3,6 +3,7 @@ import multiprocessing
 import logging
 from netaddr import IPNetwork
 from scapy.all import *
+from tabulate import tabulate
 
 DEBUG = 1
 #logging.getLogger('scapy.runtime').setLevel(logging.ERROR)
@@ -38,13 +39,35 @@ def ping(ip_range):
     return active_ips
 
 def print_results(results):
-    for port, result in results.items():
-        if result == 'Open':
-            print('{0}: {1}'.format(port, result))
+    for ip_addr, ports in results.items():
+        print('{0}: {1}'.format(port, result))
+
+def traceroute(hostnames):
+    destinations = set()
+    trace = {}
+    hdrs = ['Hop', 'IP']
+    data = []
+    ans, unans = sr(IP(dst=hostnames, ttl=(1,30), id=RandShort())/TCP(flags=0x2), timeout=2)
+    for send, rcv in ans:
+        destinations.add(send.dst)
+    for ip_addr in destinations:
+        trace[ip_addr] = []
+    for send, rcv in ans:
+        if(rcv.src not in trace[send.dst]):
+            trace[send.dst].append(rcv.src)
+    for ip_addr in destinations:
+        print('Traceroute to: {}'.format(ip_addr))
+        hops = 1
+        for ips in trace[ip_addr]:
+            data.append([hops, ips])
+            hops += 1
+    print(tabulate(data, headers=hdrs))
+
 
 if __name__ == '__main__':
     results = {}
     subnet = '192.168.207.0/24'
+    traceroute('google.com')
     start_time = time.time()
     ports = range(1, 1024)
     ip_list = ip_range(subnet)
