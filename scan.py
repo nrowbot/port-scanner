@@ -39,15 +39,21 @@ def ping(ip_range):
     return active_ips
 
 def print_results(results):
+    hdrs = ['Host','Active Ports']
+    data = []
     for ip_addr, ports in results.items():
-        print('{0}: {1}'.format(port, result))
+        if ports:
+            data.append([ip_addr, ports[0]])
+            for i in range(1,(len(ports)-1)):
+                data.append(['',ports[i]])
+    print(tabulate(data, headers=hdrs))
 
 def traceroute(hostnames):
     destinations = set()
     trace = {}
     hdrs = ['Hop', 'IP']
     data = []
-    ans, unans = sr(IP(dst=hostnames, ttl=(1,30), id=RandShort())/TCP(flags=0x2), timeout=2)
+    ans, unans = sr(IP(dst=hostnames, ttl=(1,30), id=RandShort())/TCP(flags=0x2), timeout=2, verbose=0)
     for send, rcv in ans:
         destinations.add(send.dst)
     for ip_addr in destinations:
@@ -72,6 +78,7 @@ if __name__ == '__main__':
     ports = range(1, 1024)
     ip_list = ip_range(subnet)
     active_ips = ping(subnet)
+    print('{} hosts are active, starting scan'.format(len(active_ips)))
     for ip_addr in active_ips:
-        print('{} is up, starting scan'.format(ip_addr))
         results[ip_addr] = TCP_stealth_scan(ip_addr, ports)
+    print_results(results)
