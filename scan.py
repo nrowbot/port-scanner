@@ -5,6 +5,7 @@ from tabulate import tabulate
 from fpdf import FPDF
 
 def ip_range(ip_range):
+    # creates an ip range from the passed in argument
     ip_list = []
     try:
         dash_range = re.search('-', ip_range)
@@ -20,6 +21,8 @@ def ip_range(ip_range):
         print_usage()
         
 def TCP_stealth_scan(ip_range, ports):
+    # uses scapy to perform a TCP stealth scan, stores the active ports for the
+    # address that the scan is run on in a list and returns it
     active_ports = []
     source_port = RandShort()
     packet = IP(dst=ip_range)/TCP(sport=source_port, dport=ports, flags='S')
@@ -32,14 +35,18 @@ def TCP_stealth_scan(ip_range, ports):
     return active_ports
 
 def UDP_scan(ip_range, ports):
+    # uses scapy to perform a UDP scan, stores the active ports for the
+    # address that the scan is run on in a list and returns it
     active_ports = []
     source_port = RandShort()
     packet = IP(dst=ip_range)/UDP(sport=source_port, dport=ports)
     ans, unans = sr(packet, timeout=2, verbose=0)
     for answer in ans:
-        print('{}'.format(answer))
+        active_ports.append(int(answer[1].sport))
+    return active_ports
     
 def ping(ip_range):
+    # uses scapy to ping ip addresses
     active_ips = []
     packet = IP(dst=ip_range)/ICMP()
     ans, unans = sr(packet, timeout=2, verbose=False)
@@ -48,6 +55,7 @@ def ping(ip_range):
     return active_ips
 
 def traceroute(hostnames):
+    # uses scapy to perform a traceroute on ip addresses
     destinations = set()
     trace = {}
     hdrs = ['Hop', 'IP']
@@ -70,6 +78,7 @@ def traceroute(hostnames):
     return [hdrs, data]
 
 def print_scan_results(results):
+    # prints the results of the TCP or UDP scan
     hdrs = ['Host','Active Ports']
     data = []
     for ip_addr, ports in results.items():
@@ -83,6 +92,7 @@ def print_scan_results(results):
     return [hdrs, data]
 
 def print_ping_results(results):
+    # prints the results of the ping sweep
     hdrs = ['Active Hosts']
     data = []
     for ip_addr in results:
@@ -91,6 +101,7 @@ def print_ping_results(results):
     return [hdrs, data]
 
 def create_parser():
+    # creates the terminal argument parser and captures the user's input
     parser = argparse.ArgumentParser()
     parser.add_argument('target', help='host/ip or ip range to scan in cidr notation or in the form 192.168.207.2-100')
     parser.add_argument('-sT', dest='tcp', action='store_true', help='performs a TCP stealth scan on the target')
@@ -137,6 +148,7 @@ def print_usage():
     sys.exit()
 
 def print_pdf(headers, data):
+    # prints to a pdf report
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font('Courier', 'I', 14)
